@@ -1,65 +1,257 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { Bot, Calendar, Camera, Clock } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+
+type MessageType = "error" | "success";
+
+type Message = {
+  type: MessageType;
+  message: string;
+};
+
+export default function HomePage() {
+  const [name, setName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [phone, setPhone] = useState<string>("");
+  const [shootType, setShootType] = useState<string>("");
+  const [preferredDate, setPreferredDate] = useState<string>("");
+  const [preferredTime, setPreferredTime] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
+
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [submissionResult, setSubmissionResult] = useState<Message | null>(
+    null,
+  );
+
+  const handleSubmit = async () => {
+    if (
+      !name ||
+      !email ||
+      !phone ||
+      !shootType ||
+      !preferredDate ||
+      !preferredTime
+    ) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    const data = {
+      name,
+      email,
+      phone,
+      shootType,
+      preferredDate,
+      preferredTime,
+      notes,
+    };
+
+    setIsSubmitting(true);
+    setSubmissionResult(null);
+
+    const url = "http://localhost:5678/webhook-test/appointment";
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error submitting appointment");
+      }
+
+      const webhookData: Message[] = await response.json();
+      setSubmissionResult(webhookData[0]);
+    } catch (error) {
+      console.error(error);
+      alert(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="min-h-screen bg-background relative p-4 md:p-8">
+      <div className="max-w-2xl mx-auto">
+        <Card className="border-border">
+          <CardHeader className="space-y-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Camera className="h-6 w-6 text-primary" />
+              <CardTitle className="text-2xl font-bold">
+                Book Your Photo Session
+              </CardTitle>
+            </div>
+            <CardDescription>
+              Fill out the form below to schedule your photography appointment.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {/* Name Field */}
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Phone Field */}
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+63 000 0000 000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Shoot Type */}
+              <div className="space-y-2">
+                <Label htmlFor="shootType">Shoot Type *</Label>
+                <Select value={shootType} onValueChange={setShootType}>
+                  <SelectTrigger id="shootType" className="w-full">
+                    <SelectValue placeholder="Select shoot type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="wedding">Wedding</SelectItem>
+                    <SelectItem value="portrait">Portrait</SelectItem>
+                    <SelectItem value="event">Event</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date and Time Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Preferred Date */}
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="preferredDate"
+                    className="flex items-center gap-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Preferred Date *
+                  </Label>
+                  <Input
+                    id="preferredDate"
+                    type="date"
+                    value={preferredDate}
+                    onChange={(e) => setPreferredDate(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Preferred Time */}
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="preferredTime"
+                    className="flex items-center gap-2"
+                  >
+                    <Clock className="h-4 w-4" />
+                    Preferred Time *
+                  </Label>
+                  <Input
+                    id="preferredTime"
+                    type="time"
+                    value={preferredTime}
+                    onChange={(e) => setPreferredTime(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Notes Field */}
+              <div className="space-y-2">
+                <Label htmlFor="notes">Additional Notes</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Tell us more about your vision, location preferences, or any special requirements..."
+                  rows={4}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full resize-none"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                disabled={isSubmitting}
+                onClick={async () => await handleSubmit()}
+                className="w-full"
+                size="lg"
+              >
+                {isSubmitting ? (
+                  "Submitting..."
+                ) : (
+                  <div className="flex items-center">
+                    <Camera className="mr-2 h-4 w-4" />
+                    Request Booking
+                  </div>
+                )}
+              </Button>
+
+              <p className="text-sm text-muted-foreground text-center">
+                * Required fields
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {submissionResult !== null && (
+        <div className="flex justify-center items-center pt-5">
+          <div
+            className={`max-w-2xl border p-3 rounded-md bg-secondary ${submissionResult.type === "error" ? "border-destructive" : "border-primary"}`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <Bot />
+              Photography Studio Assistant
+            </h1>
+
+            <p>{submissionResult.message}</p>
+          </div>
         </div>
-      </main>
+      )}
     </div>
   );
 }
