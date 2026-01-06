@@ -1,5 +1,9 @@
 "use client";
 
+import dayGridPlugin from "@fullcalendar/daygrid";
+import FullCalendar from "@fullcalendar/react";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import { PopoverAnchor } from "@radix-ui/react-popover";
 import { Bot, Calendar, Camera, Clock } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +16,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -28,6 +37,11 @@ type Message = {
   message: string;
 };
 
+type Appointment = {
+  preferredDate: string;
+  preferredTime: string;
+};
+
 export default function HomePage() {
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -41,6 +55,11 @@ export default function HomePage() {
   const [submissionResult, setSubmissionResult] = useState<Message | null>(
     null,
   );
+
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
+  const [isActive, setIsActive] = useState<boolean>(false);
 
   const handleSubmit = async () => {
     if (
@@ -93,6 +112,50 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background relative p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
+        <div className="pb-2">
+          <FullCalendar
+            plugins={[dayGridPlugin, timeGridPlugin]}
+            headerToolbar={{
+              left: "prev,next today",
+              center: "title",
+              right: "resourceTimelineWeek,dayGridMonth,timeGridWeek",
+            }}
+            events={events}
+            eventClick={(info) => {
+              info.jsEvent.preventDefault();
+
+              console.log(info);
+
+              setIsActive(true);
+              setSelectedAppointment(info.event.extendedProps as Appointment);
+            }}
+          />
+          <Popover open={isActive} onOpenChange={setIsActive}>
+            {selectedAppointment !== null && (
+              <>
+                {/* REQUIRED invisible anchor */}
+                <PopoverAnchor>
+                  <div
+                    style={{
+                      position: "fixed",
+                      top: 10,
+                      left: 0,
+                      width: 1,
+                      height: 1,
+                    }}
+                  />
+                </PopoverAnchor>
+                <PopoverContent className="w-80">
+                  <div className="grid gap-4">
+                    <h1>Appointment</h1>
+                    <p>Date: {selectedAppointment.preferredDate}</p>
+                    <p>Time: {selectedAppointment.preferredTime}</p>
+                  </div>
+                </PopoverContent>
+              </>
+            )}
+          </Popover>
+        </div>
         <Card className="border-border">
           <CardHeader className="space-y-1">
             <div className="flex items-center gap-2 mb-2">
