@@ -5,7 +5,8 @@ import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { PopoverAnchor } from "@radix-ui/react-popover";
 import { Bot, Calendar, Camera, Clock } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,7 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-type MessageType = "error" | "success";
+type MessageType = "error" | "validation_error" | "success";
 
 type Message = {
   type: MessageType;
@@ -108,6 +109,46 @@ export default function HomePage() {
       setIsSubmitting(false);
     }
   };
+
+  const events = appointments.map((item) => ({
+    title: "Appointment",
+    start: `${item.preferredDate}T${item.preferredTime}:00`,
+    end: `${item.preferredDate}T${item.preferredTime}:30`,
+    extendedProps: {
+      preferredDate: item.preferredDate,
+      preferredTime: item.preferredTime,
+    },
+  }));
+
+  const fetchAppointments = useCallback(async () => {
+    const url = "http://localhost:5678/webhook/month-appointments";
+
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+      });
+
+      const data: Appointment[] = await response.json();
+      setAppointments(data);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
+
+  useEffect(() => {
+    if (submissionResult !== null) {
+      switch (submissionResult.type) {
+        case "validation_error": {
+          toast.error(submissionResult.message);
+          break;
+        }
+      }
+    }
+  }, [submissionResult]);
 
   return (
     <div className="min-h-screen bg-background relative p-4 md:p-8">
@@ -301,20 +342,22 @@ export default function HomePage() {
         </Card>
       </div>
 
-      {submissionResult !== null && (
-        <div className="flex justify-center items-center pt-5">
-          <div
-            className={`max-w-2xl border p-3 rounded-md bg-secondary ${submissionResult.type === "error" ? "border-destructive" : "border-primary"}`}
-          >
-            <h1 className="text-xl font-bold flex items-center gap-2">
-              <Bot />
-              Photography Studio Assistant
-            </h1>
+      {submissionResult !== null &&
+        submissionResult.type !== "validation_error" &&
+        !isSubmitting && (
+          <div className="flex justify-center items-center pt-5">
+            <div
+              className={`max-w-2xl border p-3 rounded-md bg-secondary ${submissionResult.type === "error" ? "border-destructive" : "border-primary"}`}
+            >
+              <h1 className="text-xl font-bold flex items-center gap-2">
+                <Bot />
+                Photography Studio Assistant
+              </h1>
 
-            <p>{submissionResult.message}</p>
+              <p>{submissionResult.message}</p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }
