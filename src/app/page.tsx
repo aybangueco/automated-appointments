@@ -17,11 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -40,7 +36,8 @@ type Message = {
 
 type Appointment = {
   preferredDate: string;
-  preferredTime: string;
+  preferredStartTime: string;
+  preferredEndTime: string;
 };
 
 export default function HomePage() {
@@ -49,7 +46,8 @@ export default function HomePage() {
   const [phone, setPhone] = useState<string>("");
   const [shootType, setShootType] = useState<string>("");
   const [preferredDate, setPreferredDate] = useState<string>("");
-  const [preferredTime, setPreferredTime] = useState<string>("");
+  const [preferredStartTime, setPreferredStartTime] = useState<string>("");
+  const [preferredEndTime, setPreferredEndTime] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -69,7 +67,8 @@ export default function HomePage() {
       !phone ||
       !shootType ||
       !preferredDate ||
-      !preferredTime
+      !preferredStartTime ||
+      !preferredEndTime
     ) {
       alert("Please fill in all required fields");
       return;
@@ -81,7 +80,8 @@ export default function HomePage() {
       phone,
       shootType,
       preferredDate,
-      preferredTime,
+      preferredStartTime,
+      preferredEndTime,
       notes,
     };
 
@@ -112,11 +112,12 @@ export default function HomePage() {
 
   const events = appointments.map((item) => ({
     title: "Appointment",
-    start: `${item.preferredDate}T${item.preferredTime}:00`,
-    end: `${item.preferredDate}T${item.preferredTime}:30`,
+    start: `${item.preferredDate}T${item.preferredStartTime}:00`,
+    end: `${item.preferredDate}T${item.preferredEndTime}:00`,
     extendedProps: {
       preferredDate: item.preferredDate,
-      preferredTime: item.preferredTime,
+      preferredStartTime: item.preferredStartTime,
+      preferredEndTime: item.preferredEndTime,
     },
   }));
 
@@ -190,7 +191,8 @@ export default function HomePage() {
                   <div className="grid gap-4">
                     <h1>Appointment</h1>
                     <p>Date: {selectedAppointment.preferredDate}</p>
-                    <p>Time: {selectedAppointment.preferredTime}</p>
+                    <p>Start Time: {selectedAppointment.preferredStartTime}</p>
+                    <p>End Time: {selectedAppointment.preferredEndTime}</p>
                   </div>
                 </PopoverContent>
               </>
@@ -266,7 +268,7 @@ export default function HomePage() {
               </div>
 
               {/* Date and Time Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1">
                 {/* Preferred Date */}
                 <div className="space-y-2">
                   <Label
@@ -284,21 +286,39 @@ export default function HomePage() {
                     className="w-full"
                   />
                 </div>
+              </div>
 
-                {/* Preferred Time */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Preferred Start Time */}
                 <div className="space-y-2">
                   <Label
-                    htmlFor="preferredTime"
+                    htmlFor="preferredStartTime"
                     className="flex items-center gap-2"
                   >
                     <Clock className="h-4 w-4" />
-                    Preferred Time *
+                    Preferred Start Time *
                   </Label>
                   <Input
-                    id="preferredTime"
+                    id="preferredStartTime"
                     type="time"
-                    value={preferredTime}
-                    onChange={(e) => setPreferredTime(e.target.value)}
+                    value={preferredStartTime}
+                    onChange={(e) => setPreferredStartTime(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="preferredEndTime"
+                    className="flex items-center gap-2"
+                  >
+                    <Clock className="h-4 w-4" />
+                    Preferred End Time *
+                  </Label>
+                  <Input
+                    id="preferredEndTime"
+                    type="time"
+                    value={preferredEndTime}
+                    onChange={(e) => setPreferredEndTime(e.target.value)}
                     className="w-full"
                   />
                 </div>
