@@ -27,8 +27,8 @@ productive things.
 
 ### Automated Appointments
 
-![Automated Appointments](screenshots/automated_appointments.png)
+![Automated Appointments](screenshots/automated_appointments.jpg)
 
 ### Fetching Appointments
 
-![Fetch Appointments Workflow](screenshots/fetch_appointments.png)
+![Fetch Appointments Workflow](screenshots/fetch_appointments.jpg)
