@@ -4,6 +4,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { PopoverAnchor } from "@radix-ui/react-popover";
+import { User } from "better-auth";
 import { Bot, Calendar, Camera, Clock } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -26,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { getSession, signOut } from "@/lib/auth-client";
 
 type MessageType = "error" | "validation_error" | "success";
 
@@ -59,6 +61,8 @@ export default function HomePage() {
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [isActive, setIsActive] = useState<boolean>(false);
+
+  const [user, setUser] = useState<User | null>(null);
 
   const handleSubmit = async () => {
     if (
@@ -121,6 +125,24 @@ export default function HomePage() {
     },
   }));
 
+  const fetchUserInfo = useCallback(async () => {
+    try {
+      const { data } = await getSession();
+
+      if (data) {
+        setUser(data.user);
+        setEmail(data.user.email);
+        console.log(data.user.email);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUserInfo();
+  }, [fetchUserInfo]);
+
   const fetchAppointments = useCallback(async () => {
     const url = "http://localhost:5678/webhook/month-appointments";
 
@@ -155,6 +177,22 @@ export default function HomePage() {
     <div className="min-h-screen bg-background relative p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
         <div className="pb-2">
+          <div className="text-right pb-3">
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                try {
+                  await signOut();
+                } catch (error) {
+                  console.error(error);
+                } finally {
+                  window.location.reload();
+                }
+              }}
+            >
+              Logout
+            </Button>
+          </div>
           <FullCalendar
             plugins={[dayGridPlugin, timeGridPlugin]}
             headerToolbar={{
@@ -165,8 +203,6 @@ export default function HomePage() {
             events={events}
             eventClick={(info) => {
               info.jsEvent.preventDefault();
-
-              console.log(info);
 
               setIsActive(true);
               setSelectedAppointment(info.event.extendedProps as Appointment);
@@ -234,6 +270,7 @@ export default function HomePage() {
                   type="email"
                   placeholder="john@example.com"
                   value={email}
+                  disabled={true}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full"
                 />
