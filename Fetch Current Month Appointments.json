@@ -1,0 +1,247 @@
+{
+  "name": "Fetch Current Month Appointments",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "month-appointments",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "999e93ba-9c36-4f05-9663-c872e9b9a294",
+      "name": "Trigger on Fetch",
+      "webhookId": "b38b9685-c5cd-4662-80e7-1c5be77efcee"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "MNNdkBVIO9l5ThOH",
+          "mode": "list",
+          "cachedResultName": "appointment",
+          "cachedResultUrl": "/projects/r893EznIf0FuI1pc/datatables/MNNdkBVIO9l5ThOH"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "preferredDate",
+              "condition": "like",
+              "keyValue": "={{ $input.first().json.yearMonth }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        432,
+        0
+      ],
+      "id": "2c4b3ed3-aff2-4d24-ab16-72ea9e6a6862",
+      "name": "Get appointments this month",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date();\n\nconst year = today.getFullYear();\nconst month = String(today.getMonth() + 1).padStart(2, '0');\n\nconst yearMonth = `${year}-${month}`;\n\nreturn {\n  yearMonth\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "bb775c68-a30f-45b1-bc19-79b29c293238",
+      "name": "Get current month and year",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bf24ab98-002e-40d4-ba2f-c20cd09a9db3",
+              "leftValue": "={{ $json.preferredDate }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        640,
+        0
+      ],
+      "id": "f77ce0cc-0b0a-4254-9664-77248d911278",
+      "name": "If appointments exists"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1056,
+        -96
+      ],
+      "id": "2d519b4c-c620-44a9-bca3-3ee361ccd0ae",
+      "name": "Return Appointments"
+    },
+    {
+      "parameters": {
+        "jsCode": "return []"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        96
+      ],
+      "id": "6acbd5ee-74bd-43cd-b6d8-eb5edf1d4437",
+      "name": "Empty array",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1056,
+        96
+      ],
+      "id": "5554469f-b633-4f1c-8ef2-d771fa3958af",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.all().map((data) => ({\n  preferredDate: data.json.preferredDate,\n  preferredStartTime: data.json.preferredStartTime,\n  preferredEndTime: data.json.preferredEndTime\n}))\n\nreturn data"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        -96
+      ],
+      "id": "880b5a40-906a-4a68-a14c-c2a722ded2b9",
+      "name": "Filter sensitive data"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Trigger on Fetch": {
+      "main": [
+        [
+          {
+            "node": "Get current month and year",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get current month and year": {
+      "main": [
+        [
+          {
+            "node": "Get appointments this month",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get appointments this month": {
+      "main": [
+        [
+          {
+            "node": "If appointments exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If appointments exists": {
+      "main": [
+        [
+          {
+            "node": "Filter sensitive data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Empty array",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Empty array": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter sensitive data": {
+      "main": [
+        [
+          {
+            "node": "Return Appointments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "gXivOhHvbNzW5HHA",
+    "timeSavedPerExecution": 10
+  },
+  "versionId": "5b97ef1e-a85e-4990-a636-7b8bf0c75426",
+  "meta": {
+    "instanceId": "2ef8765288c17c0e18e01744a9d47f5378178bbda0c49a5cfd670d607b289c3c"
+  },
+  "id": "v2hfWhHBKY0W9A7C",
+  "tags": []
+}
