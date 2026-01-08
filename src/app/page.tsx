@@ -92,7 +92,7 @@ export default function HomePage() {
     setIsSubmitting(true);
     setSubmissionResult(null);
 
-    const url = "http://localhost:5678/webhook-test/appointment";
+    const url = "http://localhost:5678/webhook/appointment";
 
     try {
       const response = await fetch(url, {
