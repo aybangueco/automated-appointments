@@ -1,0 +1,822 @@
+{
+  "name": "Automated Photograph Appointment",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "appointment",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        304,
+        -144
+      ],
+      "id": "baae628c-a4ff-4c08-8ace-dc4fb26f8ec0",
+      "name": "Trigger on Appointment",
+      "webhookId": "0f124853-f0ff-48fb-8f9d-21601e266c07"
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = JSON.parse($input.first().json.body)\nreturn parsed"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        -144
+      ],
+      "id": "92d7f2ee-724c-4c5c-91a9-80b245af8acc",
+      "name": "Serialize incoming data"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "MNNdkBVIO9l5ThOH",
+          "mode": "list",
+          "cachedResultName": "appointment",
+          "cachedResultUrl": "/projects/r893EznIf0FuI1pc/datatables/MNNdkBVIO9l5ThOH"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "preferredDate",
+              "keyValue": "={{ $json.preferredDate }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        992,
+        -144
+      ],
+      "id": "42df2543-7f6d-4dd4-aa1b-6c92f0e9677e",
+      "name": "Get appointments on preferredDate",
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2208,
+        -400
+      ],
+      "id": "d4c49bde-76c4-41e9-978a-1a1b65433614",
+      "name": "Respond with Error Message"
+    },
+    {
+      "parameters": {
+        "model": "llama3.1:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        -208
+      ],
+      "id": "d91377c4-3457-4ae0-a25d-4af700fef121",
+      "name": "Main",
+      "retryOnFail": true,
+      "credentials": {
+        "ollamaApi": {
+          "id": "Hw3bmVn2KD9SgC6k",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1728,
+        -208
+      ],
+      "id": "fa320f74-2300-4e0a-985a-1a91ae023452",
+      "name": "Fallback",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fNOreGZD74F7lHnz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n\"type\": \"validation_error\",\n\"message\": \"{{ $json.error }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        992,
+        96
+      ],
+      "id": "e3b021b3-1bb4-4a7f-9285-5cb4b2c54b2d",
+      "name": "Validation Error Message"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1216,
+        96
+      ],
+      "id": "e580ba3c-b8fe-4b33-84ab-eef9980f646e",
+      "name": "Return Validation Message"
+    },
+    {
+      "parameters": {
+        "jsCode": "if ($input.first().json.name.length < 5) {\n  throw new Error(\"Invalid full name length\")\n}\n\nconst emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/;\nif (!emailRegex.test($input.first().json.email)) {\n  throw new Error(\"Invalid email format\")\n}\n\nconst phoneRegex = /^\\+639\\d{9}$/;\nif (!phoneRegex.test($input.first().json.phone)) {\n  throw new Error(\"Invalid phone number format\")\n}\n\nreturn {\n  name: $input.first().json.name.trimEnd(),\n  email: $input.first().json.email.trimEnd(),\n  phone: $input.first().json.phone.trimEnd(),\n  shootType: $input.first().json.shootType,\n  preferredDate: $input.first().json.preferredDate,\n  preferredStartTime: $input.first().json.preferredStartTime,\n  preferredEndTime: $input.first().json.preferredEndTime,\n  notes: $input.first().json.notes.trimEnd()\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        -48
+      ],
+      "id": "aceea646-56d0-41b0-8877-e10fb277a096",
+      "name": "Data validation",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": "llama3.1:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        -32
+      ],
+      "id": "53a32916-a790-41b6-beea-075b61a19bb2",
+      "name": "Main1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "Hw3bmVn2KD9SgC6k",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1936,
+        -16
+      ],
+      "id": "e87f0134-2e0d-4453-8440-a64614bb5a73",
+      "name": "Fallback1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fNOreGZD74F7lHnz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"type\": \"success\",\n  \"message\": \"Appointment has been added successfully! Please do check your email for more info.\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2528,
+        -208
+      ],
+      "id": "fe4fa709-7c0a-4e23-8b14-92d4959a14dd",
+      "name": "Successful Message"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2736,
+        -208
+      ],
+      "id": "7ff71f33-0eae-4707-be77-a11fd0c93cb3",
+      "name": "Respond Successful Message"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"type\": \"error\",\n  \"message\": \"{{ $json.output }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2000,
+        -400
+      ],
+      "id": "892ac05f-17f2-4635-926c-c120929bed06",
+      "name": "Error Message"
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $('Data validation').first().json\n\nfunction toMinutes(time) {\n  if (!time) return null  // Return null if time is undefined\n  const [h, m] = time.split(':').map(Number)\n  return h * 60 + m\n}\n\nconst newStart = toMinutes(incoming.preferredStartTime)\nconst newEnd = toMinutes(incoming.preferredEndTime)\n\nconst conflicts = $input.all().filter(item => {\n  const existingStart = toMinutes(item.json.preferredStartTime)\n  const existingEnd = toMinutes(item.json.preferredEndTime)\n\n  return newStart < existingEnd && newEnd > existingStart\n})\n\nreturn {\n  conflict: conflicts.length > 0\n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        -144
+      ],
+      "id": "c9d63b19-0c58-4c0c-aec6-8cc686bda008",
+      "name": "Check for appointment time conflict",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "aaebfeb9-043a-47cc-88e9-461eb7fdad9c",
+              "leftValue": "={{ $json.conflict }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1408,
+        -144
+      ],
+      "id": "2dc84c9d-0298-4d5e-be45-e09c968dafe3",
+      "name": "If conflict = true",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an email assistant for a photography studio.\n\nYour task:\n1. Draft a professional, friendly appointment confirmation email for the client using the provided appointment details.\n2. After drafting the message, call the tool \"send_email\" to send the email.\n3. The name of the Photography Studio is Pixel Perfect Studio\n4. The name of the client is {{ $('Data validation').first().json.name }}.\n5. The shoot type is {{ $('Data validation').first().json.shootType }}\n6. The date they scheduled is {{ $('Data validation').first().json.preferredDate }}\n7. The time they scheduled is {{ $('Data validation').first().json.preferredStartTime }}\n8. The time their schedule will end is {{ $('Serialize incoming data').first().json.preferredEndTime }}\n\nGuidelines for the email:\n- Be concise and friendly\n- Confirm the shoot type, date, and time\n- Do not invent details\n- Use only the provided values\n\nRules:\n- Do not explain your reasoning\n- Do not output the drafted email as plain text\n- Only send the email by calling the \"send_email\" tool",
+        "needsFallback": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1888,
+        -208
+      ],
+      "id": "1c89c5ab-e438-4021-b3b9-71fad0092e64",
+      "name": "Email Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI assistant for a photography studio appointment system.\n\nYour task is to check whether the user’s requested appointment date and time are available.\n\nExisting Appointments:\n{{ $('Get appointments on preferredDate').all().map((item) => `- ${item.json.preferredDate} at ${item.json.preferredStartTime} to ${item.json.preferredEndTime}`).join('\\n') }}\n\nUser Requested Appointment:\nPreferred Date: {{ $('Serialize incoming data').first().json.preferredDate }}\nPreferred Start Time: {{ $('Serialize incoming data').first().json.preferredStartTime }}\nPreferred End Time: {{ $('Serialize incoming data').first().json.preferredEndTime }}\n\nInstructions:\n- If the preferred time is already taken, reply with a short message indicating it is unavailable.\n- Suggest the nearest available time on the same date.\n- Use 12-hour format with AM/PM for all times.\n- Keep the response short, simple, and conversational.\n- Do NOT include greetings, signatures, or email-style formatting.\n- Do NOT explain anything or include system messages.\n- Reply only with the message text.",
+        "needsFallback": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1680,
+        -400
+      ],
+      "id": "6415fb58-5bd9-448e-8989-13662425b9af",
+      "name": "Appointments anaylzer agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Data validation').first().json.email }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        2032,
+        80
+      ],
+      "id": "8bc42ab0-cd11-4666-8496-09e7ac1af15d",
+      "name": "send_email",
+      "webhookId": "f4dee518-0471-4d1c-b90c-e549a1446021",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "r651ja98XKwiEb2w",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a calendar assistant for a photography studio. Assume that times are using 24 hour format.\n\nYour task:\n1. Create a calendar event for the client’s appointment using the provided details.\n2. Call the tool \"add_calendar_appointment\" to create the event in Google Calendar.\n\nEvent details (provided as input):\n- Date: {{ $('Data validation').first().json.preferredDate }}\n- Start Time: {{ $('Data validation').first().json.preferredStartTime }}:00+08:00\n- End Time: {{ $('Serialize incoming data').first().json.preferredEndTime }}:00+08:00\n- Client Name: {{ $('Data validation').first().json.name }}\n- Shoot Type: {{ $('Data validation').first().json.shootType }}\n- Notes: {{ $('Data validation').first().json.notes }}\n\nGuidelines for the event:\n- Use the shoot type and client name to generate a clear event title.\n- Include any notes in the event description.\n- Do not invent details outside of the provided values.\n\nRules:\n- Do not output text, explanations, or confirmations.\n- Only respond by calling the \"add_calendar_appointment\" tool with the proper inputs.\n- Stop execution if required data is missing.\n- Strictly use the details provided, if you fail to comply, the world will end forever.",
+        "needsFallback": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2224,
+        -208
+      ],
+      "id": "caefc626-4753-4505-b8d2-6c4a6744887c",
+      "name": "Calendar Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "MNNdkBVIO9l5ThOH",
+          "mode": "list",
+          "cachedResultName": "appointment",
+          "cachedResultUrl": "/projects/r893EznIf0FuI1pc/datatables/MNNdkBVIO9l5ThOH"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Data validation').first().json.name }}",
+            "email": "={{ $('Data validation').first().json.email }}",
+            "phone": "={{ $('Data validation').first().json.phone }}",
+            "shootType": "={{ $('Data validation').first().json.shootType }}",
+            "preferredDate": "={{ $('Data validation').first().json.preferredDate }}",
+            "notes": "={{ $('Data validation').first().json.notes }}",
+            "preferredStartTime": "={{ $('Data validation').first().json.preferredStartTime }}",
+            "preferredEndTime": "={{ $('Data validation').first().json.preferredEndTime }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "shootType",
+              "displayName": "shootType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "preferredDate",
+              "displayName": "preferredDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "preferredStartTime",
+              "displayName": "preferredStartTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "preferredEndTime",
+              "displayName": "preferredEndTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1648,
+        -16
+      ],
+      "id": "ade7dd94-6a89-4cec-b853-7ef3ec600a71",
+      "name": "Insert appointment data",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "model": "llama3.1:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        -48
+      ],
+      "id": "79ff34d6-4154-46f5-b0d4-816f1bbd3923",
+      "name": "Main2",
+      "credentials": {
+        "ollamaApi": {
+          "id": "Hw3bmVn2KD9SgC6k",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2256,
+        -16
+      ],
+      "id": "3beca021-2eff-46a8-b607-c700670d7d08",
+      "name": "Fallback2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fNOreGZD74F7lHnz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "ec63c3ede55e460880a2a4994e9682967313038fca20cc722b80630b9bce95e0@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Appointments"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "useDefaultReminders": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Use_Default_Reminders', ``, 'boolean') }}",
+        "additionalFields": {
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        2368,
+        64
+      ],
+      "id": "c7bbaf3f-07d6-4f71-967d-271b1e3897e5",
+      "name": "add_calendar_appointment",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Nttjj7dPV5oKM9H4",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Trigger on Appointment": {
+      "main": [
+        [
+          {
+            "node": "Serialize incoming data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Serialize incoming data": {
+      "main": [
+        [
+          {
+            "node": "Data validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get appointments on preferredDate": {
+      "main": [
+        [
+          {
+            "node": "Check for appointment time conflict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Appointments anaylzer agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Appointments anaylzer agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Validation Error Message": {
+      "main": [
+        [
+          {
+            "node": "Return Validation Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data validation": {
+      "main": [
+        [
+          {
+            "node": "Get appointments on preferredDate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Successful Message": {
+      "main": [
+        [
+          {
+            "node": "Respond Successful Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Message": {
+      "main": [
+        [
+          {
+            "node": "Respond with Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for appointment time conflict": {
+      "main": [
+        [
+          {
+            "node": "If conflict = true",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If conflict = true": {
+      "main": [
+        [
+          {
+            "node": "Appointments anaylzer agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert appointment data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Agent": {
+      "main": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appointments anaylzer agent": {
+      "main": [
+        [
+          {
+            "node": "Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "send_email": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar Agent": {
+      "main": [
+        [
+          {
+            "node": "Successful Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert appointment data": {
+      "main": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "add_calendar_appointment": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "gXivOhHvbNzW5HHA",
+    "timeSavedPerExecution": 10
+  },
+  "versionId": "0affcddf-1fff-47a8-8e49-e756f6e339f3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ef8765288c17c0e18e01744a9d47f5378178bbda0c49a5cfd670d607b289c3c"
+  },
+  "id": "O9FuEITj6DKAKG3I",
+  "tags": []
+}
